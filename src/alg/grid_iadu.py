@@ -2,8 +2,8 @@ import time
 import numpy as np
 from typing import List, Tuple, Dict
 import matplotlib.pyplot as plt
-from HPF_eq import HPF, HPFR, HPFR_div
-from baseline_iadu import base_precompute, baseline_iadu_algorithm
+from alg.HPF_eq import HPF, HPFR, HPFR_div
+from alg.baseline_iadu import base_precompute, baseline_iadu_algorithm
 from models import Place, Cell, SquareGrid, FullGrid
 import config as cfg
 # Global Grid Config

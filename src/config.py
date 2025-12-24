@@ -10,16 +10,16 @@ NUM_CELLS = [8,16,25]
 
 COMBO = [
     (1000, 10),
-    (1000, 20),
-    (1000, 50),
-    (1000, 100),
-    # #(1000, 50),
-    (5000, 20),
-    (5000, 50),
-    (5000, 100)
+    # (1000, 20),
+    # (1000, 50),
+    # #(1000, 100),
+    # # #(1000, 50),
+    # (5000, 20),
+    # (5000, 50),
+    # (5000, 100)
 ]
 
-GAMMAS = [1]  # example values for g
+GAMMAS = [2]  # example values for g
 
 
 DATASET_NAMES = [
@@ -49,7 +49,7 @@ DATASET_NAMES = [
 '''
 
 SIMULATED_DATASETS = [
-    "bubbles"
+    "bubble"
 ]
 
 # Generate GRID_RANGE dynamically based on NUM_CELLS

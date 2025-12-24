@@ -1,6 +1,11 @@
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+src_dir = os.path.dirname(current_dir)
+sys.path.append(src_dir)
+sys.path.append(os.path.join(src_dir, 'alg'))
+
 
 from collections import defaultdict
 from typing import List, Dict, Tuple
@@ -8,9 +13,9 @@ import pandas as pd
 from models import Place, SquareGrid 
 from config import COMBO, NUM_CELLS, GAMMAS, DATASET_NAMES
 
-from baseline_iadu import load_dataset, plot_selected, iadu
-from extension_sampling import grid_sampling 
-from biased_sampling import biased_sampling
+from alg.baseline_iadu import load_dataset, plot_selected, iadu
+from alg.extension_sampling import grid_sampling, grid_weighted_sampling
+from alg.biased_sampling import biased_sampling
 
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill, Font, Alignment, Border, Side

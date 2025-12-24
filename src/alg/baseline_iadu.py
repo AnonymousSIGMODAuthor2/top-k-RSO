@@ -2,7 +2,7 @@ import copy
 from typing import List, Tuple, Dict
 import time
 import numpy as np
-from HPF_eq import HPFR, HPFR_div
+from alg.HPF_eq import HPFR, HPFR_div
 from models import Place, SquareGrid
 import config as cfg
 
@@ -15,9 +15,8 @@ def baseline_iadu_algorithm(S: List[Place], K_full: int, k: int, W: float, psS, 
     candidates = copy.deepcopy(S)
 
     for p in candidates:
-        #+ p.rF
-        p.cHPF = psS[p.id] + p.rF
-        #p.cHPF = 0
+        #p.cHPF = psS[p.id] + p.rF
+        p.cHPF = 0
     
     select_start = time.time()
     while len(R) < k:
@@ -27,7 +26,8 @@ def baseline_iadu_algorithm(S: List[Place], K_full: int, k: int, W: float, psS, 
         if len(R) < k:
             for p in candidates:
                 if p.id != curMP.id:
-                    p.cHPF += (K - k) * (p.rF + curMP.rF) / (k - 1) + (psS[p.id] + psS[curMP.id]) / (k - 1) - 2  * W * spacial_proximity(sS, p, curMP)
+                    p.cHPF += (K - k) * (p.rF + curMP.rF) / (k - 1) +(psS[p.id] + psS[curMP.id]) / (k - 1) - 2 * W * spacial_proximity(sS, p, curMP)
+                    # 
     select_end = time.time()
     
     select_end - select_start
@@ -142,7 +142,7 @@ def load_dataset(dataset_name: str, K: int) -> List[Place]:
     """
     # Construct the path relative to this file (src/baseline_iadu.py)
     # Go up one level (to src/) and then into "datasets"
-    base_path = os.path.join(os.path.dirname(__file__), "..", "datasets")
+    base_path = os.path.join(os.path.dirname(__file__), "..", "..", "datasets")
     file_path = os.path.join(base_path, f"{dataset_name}_K{K}.pkl")
 
     if not os.path.exists(file_path):
