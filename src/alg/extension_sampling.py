@@ -16,7 +16,7 @@ from alg.HPF_eq import HPFR
 from alg.baseline_iadu import base_precompute
 
 
-def grid_sampling(S: List[Place], k: int, W: float, G: int):
+def grid_sampling(S: List[Place], k: int, W: float, G: int, optimal_psS, optimal_sS):
     """
     Implements "Option 3: Grid based and proportional selection per cell".
     
@@ -35,7 +35,7 @@ def grid_sampling(S: List[Place], k: int, W: float, G: int):
     CL = grid.get_full_cells() # Get non-empty cells
     prep_time = time.time() - t_prep_start
     
-    optimal_psS, optimal_sS, optimal_prep_time = base_precompute(S)
+    # optimal_psS, optimal_sS, optimal_prep_time = base_precompute(S)
     
     K = len(S)
     if K == 0 or k == 0:
@@ -115,7 +115,7 @@ def grid_sampling(S: List[Place], k: int, W: float, G: int):
     # --- MODIFIED RETURN (8 values) ---
     return R, score, sum_psS, sum_psR, prep_time, selection_time, len(CL), cell_stats
 
-def grid_weighted_sampling(S: List[Place], k: int, W: float, G: int):
+def grid_weighted_sampling(S: List[Place], k: int, W: float, G: int, optimal_psS, optimal_sS):
     """
     Implements "Weighted Grid Sampling".
     
@@ -134,7 +134,7 @@ def grid_weighted_sampling(S: List[Place], k: int, W: float, G: int):
     prep_time = time.time() - t_prep_start
     
     # Pre-computation for HPFR (assuming base_precompute exists)
-    optimal_psS, optimal_sS, optimal_prep_time = base_precompute(S)
+    #optimal_psS, optimal_sS, optimal_prep_time = base_precompute(S)
     
     K = len(S)
     if K == 0 or k == 0:

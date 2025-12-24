@@ -351,13 +351,13 @@ def base_iadu_on_grid(S: List[Place], k: int, W, G) -> Tuple[List[Place], Dict[i
     return R, score, sum_psS, sum_psR, prep_time, selection_time
 
 
-def grid_iadu(S: List[Place], k: int, W, G: int) -> Tuple[List[Place], Dict[int, float], Dict[int, float], float, float, float]:
+def grid_iadu(S: List[Place], k: int, W, G: int, optimal_psS, optimal_sS) -> Tuple[List[Place], Dict[int, float], Dict[int, float], float, float, float]:
 
     # Preparation step
     grid = SquareGrid(S, G)
     CL = grid.get_full_cells()
     psS, sS , prep_time = virtual_grid_based_algorithm(CL,S)
-    optimal_psS, optimal_sS, optimal_prep_time = base_precompute(S)
+    # optimal_psS, optimal_sS, optimal_prep_time = base_precompute(S)
 
         
     # Run grid IAdU algorithm

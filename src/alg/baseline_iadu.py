@@ -68,10 +68,8 @@ def base_precompute(S: List[Place]) -> Tuple[Dict[int, float], Dict[Tuple[int, i
 ####################################################################################################
 #####################################################################################################
 # --- IAdU method ---
-def iadu(S: List[Place], k: int, W) -> Tuple[List[Place], Dict[int, float], Dict[int, float], float, float, float]:
+def iadu(S: List[Place], k: int, W, exact_psS, exact_sS, prep_time) -> Tuple[List[Place], Dict[int, float], Dict[int, float], float, float, float]:
     K = len(S)
-    # Preparation step
-    exact_psS, exact_sS, prep_time = base_precompute(S)
         
     # Run baseline IAdU algorithm
     R, selection_time = baseline_iadu_algorithm(S, K, k, W, exact_psS, exact_sS)
