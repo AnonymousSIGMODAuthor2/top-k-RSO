@@ -10,7 +10,7 @@ class ExperimentRunner:
         self.load_dataset = load_dataset_func
         self.logger = logger
         self.algorithms = {}
-        self.plot_callback = plot_callback  # <--- NEW: Store the callback
+        self.plot_callback = plot_callback 
 
     def register(self, name: str, func: Callable, params: Dict[str, Any] = None):
         self.algorithms[name] = {'func': func, 'params': params or {}}
@@ -28,13 +28,19 @@ class ExperimentRunner:
                         continue
 
                     print(f"  > Precomputing Exact Baseline stats for {shape}...")
-                    exact_psS, exact_sS, exact_base_prep_time = base_precompute(S)
-                    
-                    precomputed_context = {
-                        'exact_psS': exact_psS, 
-                        'exact_sS': exact_sS, 
-                        'base_prep_time': exact_base_prep_time
-                    }
+                    try:
+                        exact_psS, exact_sS, exact_base_prep_time = base_precompute(S)
+                        precomputed_context = {
+                            'exact_psS': exact_psS, 
+                            'exact_sS': exact_sS, 
+                            'base_prep_time': exact_base_prep_time
+                        }
+                    except Exception as e:
+                        print(f"  ! Precompute failed: {e}")
+                        precomputed_context = None
+
+                    if not precomputed_context:
+                        continue
 
                     for G in G_values:
                         row = {
@@ -42,11 +48,9 @@ class ExperimentRunner:
                             "K/(k*g)": f"K/(k * {g})", "G": G, "lenCL": 0 
                         }
 
-                        # --- NEW: Dictionary to store plotting data for this iteration ---
                         current_algo_results = {}
 
                         for name, algo_def in self.algorithms.items():
-                            # Capture the result data (R, score, extras)
                             result_data = self._run_and_record(
                                 name, algo_def, S, k, W, G, 
                                 row, precomputed_context
@@ -56,7 +60,6 @@ class ExperimentRunner:
 
                         self.logger.log(row)
 
-                        # --- NEW: Trigger Plotting Callback ---
                         if self.plot_callback:
                             self.plot_callback(S, shape, K, k, G, current_algo_results)
         
@@ -65,6 +68,7 @@ class ExperimentRunner:
     def _run_and_record(self, name, algo_def, S, k, W, G, row, context):
         func = algo_def['func']
         
+        # 1. Base Arguments available to all functions
         available_args = {
             'S': S, 'k': k, 'W': W, 'G': G,
             'exact_psS': context['exact_psS'],     
@@ -76,14 +80,20 @@ class ExperimentRunner:
             'optimal_sS': context['exact_sS']
         }
 
+        # 2. (FIX) Merge the specific algorithm parameters (e.g., m, d)
+        # This ensures 'm' and 'd' are available for QuadTree
+        algo_params = algo_def.get('params', {})
+        available_args.update(algo_params)
+
+        # 3. Filter arguments based on function signature
+        # Only pass arguments that the function explicitly asks for
         sig = inspect.signature(func)
         call_kwargs = {k: v for k, v in available_args.items() if k in sig.parameters}
         
         try:
             res = func(**call_kwargs)
             
-            # Unpack standard returns
-            # (R, score, sum_pss, sum_psr, prep_t, sel_t, ...)
+            # Standard Unpacking (first 6 are guaranteed)
             R = res[0]
             score = res[1]
             sum_pss = res[2] 
@@ -94,9 +104,11 @@ class ExperimentRunner:
             if name == "base_iadu":
                 prep_t = context['base_prep_time']
 
-            if len(res) > 6 and name == "grid_sampling":
+            # Extract lenCL if available (usually index 6)
+            if len(res) > 6:
                 row["lenCL"] = res[6]
 
+            # Store metrics in the row dict
             row[f"{name}_hpfr"] = score
             row[f"{name}_pss_sum"] = sum_pss
             row[f"{name}_psr_sum"] = sum_psr
@@ -104,15 +116,17 @@ class ExperimentRunner:
             row[f"{name}_sel_time"] = sel_t
             row[f"{name}_x_time"] = prep_t + sel_t
 
-            # --- NEW: Return data needed for plotting ---
             return {
                 'R': R,
                 'score': score,
-                'raw_res': res # Keep full tuple for custom extraction (e.g. cell_stats)
+                'raw_res': res 
             }
 
         except Exception as e:
             print(f"  Error running {name} on {row['shape']} G={G}: {e}")
+            # import traceback
+            # traceback.print_exc() 
+            # Fill with 0s on error to prevent CSV misalignment
             for suffix in ["hpfr", "pss_sum", "psr_sum", "prep_time", "sel_time", "x_time"]:
                 row[f"{name}_{suffix}"] = 0
             return None

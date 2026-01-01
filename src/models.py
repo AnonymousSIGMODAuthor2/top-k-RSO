@@ -201,3 +201,86 @@ class FullGrid(SquareGrid):
                     cx = self.x_min + (gx + 0.5) * self.cell_w
                     cy = self.y_min + (gy + 0.5) * self.cell_h
                     c.center = np.array([cx, cy])
+
+class QuadNode:
+    def __init__(self, x_min: float, y_min: float, x_max: float, y_max: float, depth: int):
+        self.bounds = (x_min, y_min, x_max, y_max)
+        self.depth = depth
+        self.children: List['QuadNode'] = []
+        self.places: List = [] 
+        self.is_leaf = True
+
+    def insert(self, place, m: int, max_d: int):
+        if not self.is_leaf:
+            self._get_child(place).insert(place, m, max_d)
+            return
+
+        self.places.append(place)
+
+        if len(self.places) > m and self.depth < max_d:
+            self.split(m, max_d)
+
+    def split(self, m, max_d):
+        self.is_leaf = False
+        x_min, y_min, x_max, y_max = self.bounds
+        mid_x = (x_min + x_max) / 2
+        mid_y = (y_min + y_max) / 2
+        next_depth = self.depth + 1
+
+        self.children = [
+            QuadNode(x_min, mid_y, mid_x, y_max, next_depth), # NW
+            QuadNode(mid_x, mid_y, x_max, y_max, next_depth), # NE
+            QuadNode(x_min, y_min, mid_x, mid_y, next_depth), # SW
+            QuadNode(mid_x, y_min, x_max, mid_y, next_depth)  # SE
+        ]
+
+        existing_places = self.places
+        self.places = []
+        
+        for p in existing_places:
+            self._get_child(p).insert(p, m, max_d)
+
+    def _get_child(self, place) -> 'QuadNode':
+        # FIX: Access coordinates via .coords tuple
+        # Assumes place.coords = (x, y)
+        x, y = place.coords[0], place.coords[1]
+        
+        x_min, y_min, x_max, y_max = self.bounds
+        mid_x = (x_min + x_max) / 2
+        mid_y = (y_min + y_max) / 2
+
+        if x < mid_x:
+            if y >= mid_y: return self.children[0] # NW
+            else:          return self.children[2] # SW
+        else:
+            if y >= mid_y: return self.children[1] # NE
+            else:          return self.children[3] # SE
+
+    def get_all_leaves(self) -> List['QuadNode']:
+        if self.is_leaf:
+            return [self] if len(self.places) > 0 else []
+        leaves = []
+        for child in self.children:
+            leaves.extend(child.get_all_leaves())
+        return leaves
+
+class QuadTree:
+    def __init__(self, S: List, m: int, max_d: int):
+        if not S:
+            self.root = None
+            return
+            
+        # FIX: Update bounds calculation to use .coords
+        min_x = min(p.coords[0] for p in S)
+        max_x = max(p.coords[0] for p in S) + 0.00001
+        min_y = min(p.coords[1] for p in S)
+        max_y = max(p.coords[1] for p in S) + 0.00001
+        
+        self.root = QuadNode(min_x, min_y, max_x, max_y, 0)
+        
+        for p in S:
+            self.root.insert(p, m, max_d)
+            
+    def get_leaves(self):
+        if not self.root: return []
+        return self.root.get_all_leaves()
