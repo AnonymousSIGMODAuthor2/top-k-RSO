@@ -8,8 +8,9 @@ class ExperimentLogger:
         self.filename = f"{experiment_name}.xlsx"
         self.logs = []
         
-        # 1. Define the STRICT column order
-        # Added 'diff' columns next to their respective method's HPFR
+        # 1. Define the STRICT column order for known methods
+        # Note: The save method now dynamically handles diff% columns, 
+        # so even if you remove them here, they will still appear next to their scores.
         self.columns_order = [
             "shape", "K", "k", "W", "K/(k*g)", "G", "lenCL",
             
@@ -45,31 +46,65 @@ class ExperimentLogger:
 
         df = pd.DataFrame(self.logs)
         
-        # --- NEW: Calculate Diff% Columns ---
-        # Formula: (Method - Base) / Base
+        # --- NEW: Dynamic Diff% Calculation ---
         base_col = "base_iadu_hpfr"
-        targets = [
-            ("grid_standard_hpfr", "grid_standard_hpfr_diff%"),
-            ("grid_weighted_hpfr", "grid_weighted_hpfr_diff%"),
-            ("quadtree_sampling_hpfr", "quadtree_sampling_hpfr_diff%")
-        ]
         
         if base_col in df.columns:
-            for score_col, diff_col in targets:
-                if score_col in df.columns:
-                    # Calculate percentage difference (e.g. 0.05 for 5%)
-                    df[diff_col] = (df[score_col] - df[base_col]) / df[base_col]
-        
-        # Reorder columns: Keep strict order, append any new/unknown columns at the end
-        existing_cols = [c for c in self.columns_order if c in df.columns]
-        remaining_cols = [c for c in df.columns if c not in existing_cols]
-        final_cols = existing_cols + remaining_cols
-        
-        df = df[final_cols]
+            # 1. Calculate Diff% for ALL methods found in the logs
+            hpfr_cols = [c for c in df.columns if c.endswith("_hpfr") and c != base_col]
+            
+            for score_col in hpfr_cols:
+                diff_col = score_col + "_diff%"
+                # Calculate percentage difference
+                # Handle division by zero if necessary, though hpfr shouldn't be 0 normally
+                df[diff_col] = df.apply(
+                    lambda row: (row[score_col] - row[base_col]) / row[base_col] if row[base_col] != 0 else 0,
+                    axis=1
+                )
+
+            # 2. Smart Column Reordering
+            # We want strict ordering for known columns, but we also want to ensure
+            # that any NEW method (e.g. biased_sampling) has its diff% column right next to it.
+            
+            final_cols = []
+            added_cols = set()
+
+            # A. Process defined columns first (to maintain the preferred order)
+            for col in self.columns_order:
+                if col in df.columns and col not in added_cols:
+                    final_cols.append(col)
+                    added_cols.add(col)
+                    
+                    # Check if this is a score column and we missed its diff pairing
+                    if col.endswith("_hpfr") and col != base_col:
+                        diff_col = col + "_diff%"
+                        if diff_col in df.columns and diff_col not in added_cols:
+                            final_cols.append(diff_col)
+                            added_cols.add(diff_col)
+
+            # B. Process any remaining columns (e.g. new algorithms not in columns_order)
+            remaining_cols = [c for c in df.columns if c not in added_cols]
+            
+            # We iterate through remaining columns to find scores and pair them
+            processed_remaining = set()
+            for col in remaining_cols:
+                if col in processed_remaining: continue
+                
+                final_cols.append(col)
+                processed_remaining.add(col)
+                
+                # If we just added a score column, immediately look for its diff
+                if col.endswith("_hpfr") and col != base_col:
+                    diff_col = col + "_diff%"
+                    if diff_col in df.columns and diff_col not in processed_remaining:
+                        final_cols.append(diff_col)
+                        processed_remaining.add(diff_col)
+            
+            df = df[final_cols]
         
         df.to_excel(self.filename, index=False)
         self._apply_pro_styling(df)
-        print(f"✔ Results saved with DIFF% Columns to: {self.filename}")
+        print(f"✔ Results saved with Dynamic DIFF% Columns to: {self.filename}")
 
     def _apply_pro_styling(self, df):
         try:

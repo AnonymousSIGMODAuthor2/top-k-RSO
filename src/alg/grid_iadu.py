@@ -54,9 +54,9 @@ def grid_based_iadu_algorithm(S: list[Place], CL: list[Cell], W: float, psS ,sS:
     for cell in CL:
         TkH[cell.id] = MinHeap(k)
         for place in cell.places:
-            place.cHPF = psS[place.id] + place.rF
+            #place.cHPF = psS[place.id] + place.rF
             #place.cHPF = psS[place.id]
-            #place.cHPF = 0
+            place.cHPF = 0
             TkH[cell.id].push(place)
         heads[cell.id] = TkH[cell.id].pop()
     
