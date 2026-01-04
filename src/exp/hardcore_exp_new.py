@@ -7,7 +7,6 @@ from matplotlib.backends.backend_pdf import PdfPages
 # Ensure parent directory is in path to import modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-7777777778777777777777777777777777777777777# --- CONFIG AND MODELS ---
 import config as cfg
 from log.logger import ExperimentLogger
 from log.runner import ExperimentRunner

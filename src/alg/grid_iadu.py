@@ -63,6 +63,7 @@ def grid_based_iadu_algorithm(S: list[Place], CL: list[Cell], W: float, psS ,sS:
     while len(R) != k:
         # Get the top place across all heap heads
         max_score = 0.0
+        curID = None
         
         for id, head in heads.items():
             if head.cHPF >= max_score:
@@ -70,6 +71,9 @@ def grid_based_iadu_algorithm(S: list[Place], CL: list[Cell], W: float, psS ,sS:
                 curH = TkH[id]
                 curID = id
                 max_score = curMP.cHPF
+        
+        if curID is None:
+            break
     
         # Put next head in array
         del heads[curID]
