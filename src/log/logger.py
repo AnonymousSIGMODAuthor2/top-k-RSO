@@ -8,105 +8,117 @@ class ExperimentLogger:
         self.filename = f"{experiment_name}.xlsx"
         self.logs = []
         
-        # 1. Define the PREFERRED order for known columns.
-        # Any column not in this list will be added automatically at the end.
-        self.columns_order = [
-            "shape", "K", "k", "W", "K/(k*g)", "G", "lenCL",
-            
-            # Base
-            "base_iadu_hpfr", "base_iadu_pss_sum", "base_iadu_psr_sum",
-            
-            # Known Methods (order matters here, but names must match what is in runner.py)
-            "grid_iadu_hpfr", 
-            "grid_weighted_hpfr", 
-            "quadtree_sampling_hpfr",
-            "biased_sampling_hpfr",
-            
-            # Times
-            "base_iadu_prep_time", "grid_iadu_prep_time", "grid_weighted_prep_time", "quadtree_sampling_prep_time",
-            "base_iadu_sel_time", "grid_iadu_sel_time", "grid_weighted_sel_time", "quadtree_sampling_sel_time",
-            "base_iadu_x_time", "grid_iadu_x_time", "grid_weighted_x_time", "quadtree_sampling_x_time"
-        ]
+        # Standard metadata columns that should always appear first
+        self.meta_columns = ["shape", "K", "k", "W", "K/(k*g)", "G", "lenCL"]
+        
+        # The standard metrics we expect for every method
+        self.metric_suffixes = ["_hpfr", "_pss_sum", "_psr_sum"]
+        self.time_suffixes = ["_prep_time", "_sel_time", "_x_time"]
 
     def log(self, row_dict):
+        """
+        Logs a dictionary of results.
+        Keys should follow the format: '{method}_{metric}' (e.g., 'grid_weighted_hpfr')
+        """
         self.logs.append(row_dict)
 
-    def _calculate_metrics(self, df):
-        """Calculates Diff% and Speedup for ALL methods found in the dataframe."""
-        base_col = "base_iadu_hpfr"
-        base_time_col = "base_iadu_x_time"
+    def _calculate_derived_metrics(self, df):
+        """
+        Dynamically calculates Diff% and Speedup for ANY method found in the dataframe
+        that is NOT the baseline.
+        """
+        base_hpfr = "base_iadu_hpfr"
+        base_time = "base_iadu_x_time"
         
-        # 1. Find all score columns (ending in _hpfr)
-        hpfr_cols = [c for c in df.columns if c.endswith("_hpfr") and c != base_col]
+        # 1. Identify all unique methods present in the columns
+        # We look for columns ending in '_hpfr' to identify valid methods
+        methods = set()
+        for col in df.columns:
+            if col.endswith("_hpfr") and col != base_hpfr:
+                methods.add(col.replace("_hpfr", ""))
         
-        for score_col in hpfr_cols:
-            # Calculate Diff%
-            diff_col = score_col + "_diff%"
-            if base_col in df.columns:
+        # 2. Calculate Metrics for each identified method
+        for method in methods:
+            # A. HPFR Diff % (Method vs Base)
+            score_col = f"{method}_hpfr"
+            diff_col = f"{method}_hpfr_diff%"
+            
+            if score_col in df.columns and base_hpfr in df.columns:
                 df[diff_col] = df.apply(
-                    lambda row: (row[score_col] - row[base_col]) / row[base_col] if row[base_col] != 0 else 0,
+                    lambda row: (row[score_col] - row[base_hpfr]) / row[base_hpfr] if row[base_hpfr] != 0 else 0,
                     axis=1
                 )
 
-        # 2. Find all total time columns (ending in _x_time)
-        time_cols = [c for c in df.columns if c.endswith("_x_time") and c != base_time_col]
-        
-        for time_col in time_cols:
-            # Calculate Speedup
-            speedup_col = time_col.replace("_x_time", "_speedup")
-            if base_time_col in df.columns:
+            # B. Speedup (Base Time / Method Time)
+            time_col = f"{method}_x_time"
+            speedup_col = f"{method}_speedup"
+            
+            if time_col in df.columns and base_time in df.columns:
                 df[speedup_col] = df.apply(
-                    lambda row: row[base_time_col] / row[time_col] if row[time_col] != 0 else 0,
+                    lambda row: row[base_time] / row[time_col] if row[time_col] != 0 else 0,
                     axis=1
                 )
+                
         return df
 
-    def _reorder_columns(self, df):
-        """Smartly orders columns: Fixed Order -> Derived (Diff/Speedup) -> Remaining."""
-        final_cols = []
-        added_cols = set()
-
-        def add_col_group(col_name):
-            """Helper to add a column AND its associated metric (diff/speedup) immediately."""
-            if col_name in df.columns and col_name not in added_cols:
-                final_cols.append(col_name)
-                added_cols.add(col_name)
-                
-                # Check for associated Diff% (for scores)
-                diff_name = col_name + "_diff%"
-                if diff_name in df.columns and diff_name not in added_cols:
-                    final_cols.append(diff_name)
-                    added_cols.add(diff_name)
-
-                # Check for associated Speedup (for times)
-                # Assuming time format: {method}_x_time -> {method}_speedup
-                if col_name.endswith("_x_time"):
-                    method_prefix = col_name.replace("_x_time", "")
-                    speedup_name = f"{method_prefix}_speedup"
-                    if speedup_name in df.columns and speedup_name not in added_cols:
-                        final_cols.append(speedup_name)
-                        added_cols.add(speedup_name)
-
-        # 1. Process the User-Defined Order first
-        for col in self.columns_order:
-            add_col_group(col)
-
-        # 2. Process all remaining columns (dynamically discovered methods)
-        # We sort them to keep "method_A_..." columns grouped together
-        remaining = sorted([c for c in df.columns if c not in added_cols])
+    def _organize_columns(self, df):
+        """
+        Sorts columns logically: Meta -> Baseline -> Methods (Alphabetical) -> Times
+        """
+        cols = list(df.columns)
         
-        for col in remaining:
-            # Skip diff/speedup columns here; they are added when their 'parent' is processed
-            if col.endswith("_diff%") or col.endswith("_speedup"):
-                continue
-            add_col_group(col)
-
-        # 3. Catch-all: If any diff/speedup columns were orphaned (parent missing), add them now
-        for col in df.columns:
-            if col not in added_cols:
-                final_cols.append(col)
-                added_cols.add(col)
-
+        # 1. Metadata (Fixed order)
+        final_cols = [c for c in self.meta_columns if c in cols]
+        
+        # 2. Baseline Metrics (Always second)
+        base_metrics = [c for c in cols if c.startswith("base_iadu_") and not any(t in c for t in ["time", "speedup"])]
+        final_cols.extend(sorted(base_metrics))
+        
+        # 3. Identify Other Methods
+        methods = set()
+        for c in cols:
+            # Split by known suffixes to find method names
+            for suffix in self.metric_suffixes:
+                if c.endswith(suffix) and "base_iadu" not in c:
+                    methods.add(c.replace(suffix, ""))
+        
+        sorted_methods = sorted(list(methods))
+        
+        # 4. Method Metrics (Score, Diff, PSS, PSR)
+        for method in sorted_methods:
+            # We want this specific order for readability
+            standard_block = [
+                f"{method}_hpfr",
+                f"{method}_hpfr_diff%",
+                f"{method}_pss_sum",
+                f"{method}_psr_sum"
+            ]
+            for col in standard_block:
+                if col in cols:
+                    final_cols.append(col)
+                    
+        # 5. Times & Speedup (At the end)
+        # Baseline Time
+        base_times = [c for c in cols if c.startswith("base_iadu_") and "time" in c]
+        final_cols.extend(sorted(base_times))
+        
+        # Method Times
+        for method in sorted_methods:
+            time_block = [
+                f"{method}_prep_time",
+                f"{method}_sel_time",
+                f"{method}_x_time",
+                f"{method}_speedup"
+            ]
+            for col in time_block:
+                if col in cols:
+                    final_cols.append(col)
+                    
+        # 6. Catch-all for anything missed
+        existing_set = set(final_cols)
+        remaining = [c for c in cols if c not in existing_set]
+        final_cols.extend(remaining)
+        
         return df[final_cols]
 
     def save(self):
@@ -114,54 +126,57 @@ class ExperimentLogger:
             print("No logs to save.")
             return
 
-        # 1. Create DataFrames
-        df_detailed = pd.DataFrame(self.logs)
-        
-        # Calculate metrics for everything found in the logs
-        df_detailed = self._calculate_metrics(df_detailed)
-        
-        # Reorder cleanly
-        df_detailed = self._reorder_columns(df_detailed)
+        # 1. Process Detailed Data
+        df = pd.DataFrame(self.logs)
+        df = self._calculate_derived_metrics(df)
+        df_detailed = self._organize_columns(df)
 
         # 2. Create Summary (Group by Settings)
-        group_keys = [k for k in ["K", "k", "W", "K/(k*g)", "G"] if k in df_detailed.columns]
+        # We group by all metadata columns that exist in the dataframe
+        group_cols = [c for c in ["K", "k", "W", "K/(k*g)", "G"] if c in df.columns]
         
-        if group_keys:
-            df_summary = df_detailed.groupby(group_keys).mean(numeric_only=True).reset_index()
-            # Re-calculate metrics on the averages to be mathematically correct
-            df_summary = self._calculate_metrics(df_summary)
-            df_summary = self._reorder_columns(df_summary)
+        if group_cols:
+            df_summary = df.groupby(group_cols).mean(numeric_only=True).reset_index()
+            # Recalculate derived metrics on the averages to be mathematically correct
+            df_summary = self._calculate_derived_metrics(df_summary)
+            df_summary = self._organize_columns(df_summary)
             
-            # Clean up nonsense columns in summary
+            # Remove meaningless columns from summary
             drop_cols = [c for c in ["shape", "lenCL"] if c in df_summary.columns]
             df_summary = df_summary.drop(columns=drop_cols)
         else:
             df_summary = pd.DataFrame()
 
-        # 3. Save to Excel
-        with pd.ExcelWriter(self.filename, engine='openpyxl') as writer:
-            if not df_summary.empty:
-                df_summary.to_excel(writer, sheet_name='Settings Summary', index=False)
-            df_detailed.to_excel(writer, sheet_name='Detailed Results', index=False)
-        
-        self._apply_pro_styling()
-        print(f"✔ Results saved correctly to: {self.filename}")
+        # 3. Write to Excel
+        try:
+            with pd.ExcelWriter(self.filename, engine='openpyxl') as writer:
+                if not df_summary.empty:
+                    df_summary.to_excel(writer, sheet_name='Settings Summary', index=False)
+                df_detailed.to_excel(writer, sheet_name='Detailed Results', index=False)
+            
+            self._apply_pro_styling()
+            print(f"✔ Results saved to: {self.filename}")
+            
+        except PermissionError:
+            print(f"❌ ERROR: Could not save to '{self.filename}'. Is the file open in Excel?")
+        except Exception as e:
+            print(f"❌ ERROR Saving Log: {e}")
 
     def _apply_pro_styling(self):
+        """Applies consistent professional formatting to all sheets."""
         try:
             wb = load_workbook(self.filename)
             
+            colors = {
+                "header": "404040", "meta": "E7E6E6", "base": "FBE5D6", 
+                "score": "E2EFDA", "diff": "D0CECE", "time": "DDEBF7", "speedup": "C6E0B4"
+            }
+            
             for ws in wb.worksheets:
-                # Styles
-                header_fill = PatternFill(start_color="404040", end_color="404040", fill_type="solid")
+                # 1. Header Styling
                 header_font = Font(bold=True, color="FFFFFF", size=11)
+                header_fill = PatternFill(start_color=colors["header"], fill_type="solid")
                 
-                colors = {
-                    "setup": "E7E6E6", "score": "E2EFDA", "diff": "D0CECE", 
-                    "prep": "FFF2CC", "sel": "FCE4D6", "time": "DDEBF7", "speedup": "E2EFDA"
-                }
-
-                # Format Headers
                 for cell in ws[1]:
                     cell.fill = header_fill
                     cell.font = header_font
@@ -169,35 +184,40 @@ class ExperimentLogger:
                 
                 ws.freeze_panes = "B2"
 
-                # Format Columns
+                # 2. Column Styling
                 for i, col_cells in enumerate(ws.columns, start=1):
-                    header_val = str(col_cells[0].value)
                     col_letter = get_column_letter(i)
+                    header = str(col_cells[0].value)
                     
-                    # Width
-                    max_len = max([len(str(c.value)) if c.value is not None else 0 for c in col_cells[:10]])
-                    ws.column_dimensions[col_letter].width = min(max(max_len + 2, 12), 50)
+                    # Auto-Width
+                    max_len = max([len(str(c.value)) if c.value is not None else 0 for c in col_cells[:15]])
+                    ws.column_dimensions[col_letter].width = min(max(max_len + 2, 12), 40)
 
-                    # Colors
+                    # Determine Color
                     fill_color = None
-                    if "diff%" in header_val: fill_color = colors["diff"]
-                    elif "speedup" in header_val: fill_color = colors["speedup"]
-                    elif any(x in header_val for x in ["shape", "K", "k", "W", "G"]): fill_color = colors["setup"]
-                    elif "hpfr" in header_val: fill_color = colors["score"]
-                    elif "prep_time" in header_val: fill_color = colors["prep"]
-                    elif "sel_time" in header_val: fill_color = colors["sel"]
-                    elif "x_time" in header_val: fill_color = colors["time"]
+                    if any(x in header for x in self.meta_columns): fill_color = colors["meta"]
+                    elif "base_iadu" in header: fill_color = colors["base"]
+                    elif "diff%" in header: fill_color = colors["diff"]
+                    elif "speedup" in header: fill_color = colors["speedup"]
+                    elif "time" in header: fill_color = colors["time"]
+                    elif any(x in header for x in ["hpfr", "pss", "psr"]): fill_color = colors["score"]
 
                     if fill_color:
-                        fill_obj = PatternFill(start_color=fill_color, fill_type="solid")
+                        fill = PatternFill(start_color=fill_color, fill_type="solid")
+                        border = Border(left=Side(style='thin', color="BFBFBF"), 
+                                        right=Side(style='thin', color="BFBFBF"))
+                        
                         for cell in col_cells[1:]:
-                            cell.fill = fill_obj
+                            cell.fill = fill
+                            cell.border = border
                             
                             # Number Formatting
-                            if "diff%" in header_val: cell.number_format = '0.00%'
-                            elif "speedup" in header_val: cell.number_format = '0.00"x"'
-                            elif isinstance(cell.value, float):
-                                cell.number_format = '0.000' if abs(cell.value) > 0.01 else '0.00E+00'
+                            if isinstance(cell.value, (int, float)):
+                                if "diff%" in header: cell.number_format = '0.00%'
+                                elif "speedup" in header: cell.number_format = '0.00"x"'
+                                elif "time" in header: cell.number_format = '0.000'
+                                elif "hpfr" in header: cell.number_format = '0.000'
+                                elif abs(cell.value) < 0.01: cell.number_format = '0.00E+00'
             
             wb.save(self.filename)
         except Exception as e:

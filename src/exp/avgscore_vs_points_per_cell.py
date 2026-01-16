@@ -1,20 +1,17 @@
 import sys
 import os
 
-
-# Ensure parent directory is in path to import modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import config as cfg
 from log.logger import ExperimentLogger
 from log.runner import ExperimentRunner
-from log.plotter import ExperimentPlotter # <--- New Import
+from log.plotter import ExperimentPlotter
 
-# --- ALGORITHM IMPORTS ---
 from alg.baseline_iadu import iadu, load_dataset
 from alg.grid_iadu import grid_iadu
 from alg.biased_sampling import biased_sampling
-from alg.extension_sampling import grid_weighted_sampling, stratified_grid_sampling
+from alg.extension_sampling import grid_sampling, stratified_grid_sampling
 
 def run():
     plotter = ExperimentPlotter("plots.pdf")
@@ -26,8 +23,7 @@ def run():
     print("Registering algorithms...")
     
     runner.register("base_iadu", iadu)
-    runner.register("grid_iadu", grid_iadu)
-    runner.register("grid_weighted", grid_weighted_sampling)
+    runner.register("grid_sampling", grid_sampling)
     runner.register("grid_stratified", stratified_grid_sampling)
     runner.register("biased_sampling", biased_sampling)
 
@@ -50,7 +46,6 @@ def run():
         import traceback
         traceback.print_exc()
     finally:
-        # Properly close plotter and save logs
         plotter.close()
         logger.save()
         print(f"\n✔ PDF Plots saved to: results_comparison.pdf")
