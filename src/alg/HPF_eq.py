@@ -22,11 +22,27 @@ def HPFR(R: List[Place], baseline_psS: Dict[int, float], baseline_sS: Dict[Tuple
                 
     #
     score = 0
-    score = (sum(p.rF for p in R))/(2*k) + sum(baseline_psS[p.id] - W * psR[p.id] for p in R)/(2 * k * (K-W))
-    # score = (sum(p.rF for p in R))/(2*k) + sum(baseline_psS[p.id] - W * psR[p.id] for p in R)/(2 * k * (K-W))
-    #score = (K - k) * (sum(p.rF for p in R)) + sum(baseline_psS[p.id] - W * psR[p.id] for p in R)
-
+    score = (sum(p.rF for p in R)) * 0.5 + sum(baseline_psS[p.id] - W * psR[p.id] for p in R)
+    # score = (K - k) * (sum(p.rF for p in R))/(2*k) + sum(baseline_psS[p.id] - W * psR[p.id] for p in R)/(2 * k * (K-W))
+    # score = (K - k) * (sum(p.rF for p in R)) + sum(baseline_psS[p.id] - W * psR[p.id] for p in R)
     
+    return score, sum(baseline_psS[p.id] for p in R), sum(W*psR[p.id] for p in R)
+
+def HPFR_no_r(R: List[Place], baseline_psS: Dict[int, float], baseline_sS: Dict[Tuple[int, int], float], W: float, K):
+    
+    psR = {p.id: 0.0 for p in R}
+    k = len(R)
+    
+    #psR
+    for pi in R:
+        for pj in R:
+            if pi.id != pj.id:
+                psR[pi.id] += spacial_proximity(baseline_sS, pi, pj)
+                
+    #
+    score = 0
+    score = sum(baseline_psS[p.id] - W * psR[p.id] for p in R)
+
     return score, sum(baseline_psS[p.id] for p in R), sum(W*psR[p.id] for p in R)
 
 def HPFR_div(R: List[Place], baseline_psS: Dict[int, float], baseline_sS: Dict[Tuple[int, int], float], W: float, K):

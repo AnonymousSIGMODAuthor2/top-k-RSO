@@ -18,8 +18,8 @@ class ExperimentRunner:
     def run_all(self, datasets, combos, gammas, G_values):
         for (K, k) in combos:
             for g in gammas:
-                W = K / (g * k)
-                print(f"\n=== Running Combo: K={K}, k={k}, g={g} ===")
+                W = g * K / k
+                print(f"\n=== Running Combo: K={K}, k={k}, W={W} ===")
 
                 for shape in datasets:
                     S = self.load_dataset(shape, K)
@@ -45,7 +45,7 @@ class ExperimentRunner:
                     for G in G_values:
                         row = {
                             "shape": shape, "K": K, "k": k, "W": W,
-                            "K/(k*g)": f"K/(k * {g})", "G": G, "lenCL": 0 
+                            "g*K/k": f"{g}*K/k", "G": G, "lenCL": 0 
                         }
 
                         current_algo_results = {}

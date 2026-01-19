@@ -9,24 +9,22 @@ from log.runner import ExperimentRunner
 from log.plotter import ExperimentPlotter
 
 # --- ALGORITHM IMPORTS ---
-from alg.baseline_iadu import iadu, load_dataset
-from alg.grid_iadu import grid_iadu
-from alg.biased_sampling import biased_sampling
-from alg.extension_sampling import grid_weighted_sampling, stratified_grid_sampling, grid_sampling
+from alg.baseline_iadu import iadu_no_r, load_dataset
+from alg.biased_sampling import sampling
+from alg.extension_sampling import grid_sampling
 
 def run():
-    plotter = ExperimentPlotter("plots.pdf")
+    plotter = ExperimentPlotter("no_r_plots.pdf")
     
-    logger = ExperimentLogger("exp_results", baseline_name="base_iadu")
+    logger = ExperimentLogger("no_r_exp_results", baseline_name="base_iadu_no_r")
     
     runner = ExperimentRunner(load_dataset, logger, plot_callback=plotter.plot_results)
 
     print("Registering algorithms...")
     
-    runner.register("base_iadu", iadu)
-    runner.register("grid_weighted", grid_weighted_sampling)
+    runner.register("base_iadu_no_r", iadu_no_r)
     runner.register("grid_sampling", grid_sampling)
-    runner.register("biased_sampling", biased_sampling)
+    runner.register("sampling", sampling)
 
     print(f"=== Starting Experiment ===")
     print(f"Datasets: {cfg.DATASET_NAMES}")
@@ -50,8 +48,6 @@ def run():
         # Properly close plotter and save logs
         plotter.close()
         logger.save()
-        print(f"\n✔ PDF Plots saved to: results_comparison.pdf")
-        print(f"✔ Excel Logs saved to: targeted_comparison.xlsx")
 
 if __name__ == "__main__":
     run()

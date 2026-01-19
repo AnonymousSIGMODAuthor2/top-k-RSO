@@ -5,19 +5,18 @@ import math
 #NUM_CELLS = [64, 100, 256, 529, 1024]  # Different grid sizes for experiments
 
 #default G = 256
-NUM_CELLS = [8, 16, 25]
+NUM_CELLS = [25]
 
 
 COMBO = [
-    (1000, 10),
     (1000, 20),
-    (1000, 50),
+    # (1000, 50),
     # (5000, 20),
     # (5000, 50),
     # (5000, 100)
 ]
 
-GAMMAS = [4]  # example values for g
+GAMMAS = [1, 0.9, 0.8, 0.75, 0.5]  # example values for g
 
 
 DATASET_NAMES = [

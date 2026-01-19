@@ -14,9 +14,9 @@ from alg.biased_sampling import biased_sampling
 from alg.extension_sampling import grid_sampling, stratified_grid_sampling
 
 def run():
-    plotter = ExperimentPlotter("plots.pdf")
+    plotter = ExperimentPlotter("score_vs_cardinality_plots.pdf")
     
-    logger = ExperimentLogger("exp_results")
+    logger = ExperimentLogger("score_vs_cardinality_results", baseline_name="base_iadu")
     
     runner = ExperimentRunner(load_dataset, logger, plot_callback=plotter.plot_results)
 
