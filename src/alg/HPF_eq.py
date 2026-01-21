@@ -13,6 +13,7 @@ def HPFR(R: List[Place], baseline_psS: Dict[int, float], baseline_sS: Dict[Tuple
     
     psR = {p.id: 0.0 for p in R}
     k = len(R)
+    sum_rF = sum(p.rF for p in R)
     
     #psR
     for pi in R:
@@ -22,11 +23,11 @@ def HPFR(R: List[Place], baseline_psS: Dict[int, float], baseline_sS: Dict[Tuple
                 
     #
     score = 0
-    score = (sum(p.rF for p in R)) * 0.5 + sum(baseline_psS[p.id] - W * psR[p.id] for p in R)
+    score = (K - k) * sum_rF * 1 + sum(baseline_psS[p.id] - W * psR[p.id] for p in R)
     # score = (K - k) * (sum(p.rF for p in R))/(2*k) + sum(baseline_psS[p.id] - W * psR[p.id] for p in R)/(2 * k * (K-W))
     # score = (K - k) * (sum(p.rF for p in R)) + sum(baseline_psS[p.id] - W * psR[p.id] for p in R)
     
-    return score, sum(baseline_psS[p.id] for p in R), sum(W*psR[p.id] for p in R)
+    return score, sum(baseline_psS[p.id] for p in R), sum(W*psR[p.id] for p in R), sum_rF
 
 def HPFR_no_r(R: List[Place], baseline_psS: Dict[int, float], baseline_sS: Dict[Tuple[int, int], float], W: float, K):
     
@@ -43,25 +44,7 @@ def HPFR_no_r(R: List[Place], baseline_psS: Dict[int, float], baseline_sS: Dict[
     score = 0
     score = sum(baseline_psS[p.id] - W * psR[p.id] for p in R)
 
-    return score, sum(baseline_psS[p.id] for p in R), sum(W*psR[p.id] for p in R)
-
-def HPFR_div(R: List[Place], baseline_psS: Dict[int, float], baseline_sS: Dict[Tuple[int, int], float], W: float, K):
-    
-    psR = {p.id: 0.0 for p in R}
-    k = len(R)
-    
-    #psR
-    for pi in R:
-        for pj in R:
-            if pi.id != pj.id:
-                psR[pi.id] += spacial_proximity(baseline_sS, pi, pj)
-    
-    score_rf = 0
-    score_ps = 0
-    score_rf = (sum(p.rF for p in R))
-    score_ps = sum(baseline_psS[p.id] - W * psR[p.id] for p in R)
-    
-    return score_rf, score_ps, sum(baseline_psS[p.id] for p in R), sum(W*psR[p.id] for p in R)
+    return score, sum(baseline_psS[p.id] for p in R), sum(W*psR[p.id] for p in R), 0
 
 # use symmetric sS
 def spacial_proximity(sS, pi, pj):

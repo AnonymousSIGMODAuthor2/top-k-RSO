@@ -337,22 +337,21 @@ def plot_on_ax(ax, S, grid, cell_size, grid_bounds, title="", R=None):
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
 
-def base_iadu_on_grid(S: List[Place], k: int, W, G) -> Tuple[List[Place], Dict[int, float], Dict[int, float], float, float, float]:
+def base_iadu_on_grid(S: List[Place], k: int, W, G, exact_psS, exact_sS) -> Tuple[List[Place], Dict[int, float], Dict[int, float], float, float, float]:
     K = len(S)
     
     # Preparation step
     grid = SquareGrid(S, G)
     CL = list(grid.get_grid().values())
     psS, sS, prep_time = virtual_grid_based_algorithm(CL,S)
-    exact_psS, exact_sS, exact_prep_time = base_precompute(S)
         
     # Run baseline IAdU algorithm
     R, selection_time = baseline_iadu_algorithm(S, K, k, W, psS, sS)
     
     # Compute final scores
-    score, sum_psS, sum_psR = HPFR(R, exact_psS, exact_sS, W, len(S))
+    score, sum_psS, sum_psR, sum_rF = HPFR(R, exact_psS, exact_sS, W, len(S))
     
-    return R, score, sum_psS, sum_psR, prep_time, selection_time
+    return R, score, sum_psS, sum_psR, sum_rF, prep_time, selection_time
 
 
 def grid_iadu(S: List[Place], k: int, W, G: int, optimal_psS, optimal_sS) -> Tuple[List[Place], Dict[int, float], Dict[int, float], float, float, float]:
@@ -368,43 +367,22 @@ def grid_iadu(S: List[Place], k: int, W, G: int, optimal_psS, optimal_sS) -> Tup
     R, selection_time = grid_based_iadu_algorithm(S, CL, W, psS, sS, k)
     
     # Compute final scores
-    score, sum_psS, sum_psR = HPFR(R, optimal_psS, optimal_sS, W, len(S))
+    score, sum_psS, sum_psR, sum_rF = HPFR(R, optimal_psS, optimal_sS, W, len(S))
     
-    return R, score, sum_psS, sum_psR, prep_time, selection_time, len(CL)
+    return R, score, sum_psS, sum_psR, sum_rF, prep_time, selection_time, len(CL)
 
-def grid_iadu_div(S: List[Place], k: int, W, G: int) -> Tuple[List[Place], Dict[int, float], Dict[int, float], float, float, float]:
-
-    # Preparation step
-    grid = SquareGrid(S, G)
-    CL = grid.get_full_cells()
-    psS, sS , prep_time = virtual_grid_based_algorithm(CL,S)
-    optimal_psS, optimal_sS, optimal_prep_time = base_precompute(S)
-
-        
-    # Run grid IAdU algorithm
-    R, selection_time = grid_based_iadu_algorithm(S, CL, W, psS, sS, k)
-    
-    # Compute final scores
-    score_rf, score_ps, sum_psS, sum_psR = HPFR_div(R, optimal_psS, optimal_sS, W, len(S))
-    
-    return R, score_rf + score_ps, score_rf, score_ps, sum_psS, sum_psR, prep_time, selection_time, len(CL)
-
-def old_grid_iadu(S: List[Place], k: int, W, G: int) -> Tuple[List[Place], Dict[int, float], Dict[int, float], float, float, float]:
+def old_grid_iadu(S: List[Place], k: int, W, G: int, optimal_psS, optimal_sS) -> Tuple[List[Place], Dict[int, float], Dict[int, float], float, float, float]:
 
     # Preparation step
     grid = FullGrid(S, G)
     FL = grid.get_all_cells()
     grid.ensure_empty_cell_centers()
     psS, sS , prep_time = old_grid_precompute(FL,S)
-    optimal_psS, optimal_sS, optimal_prep_time = base_precompute(S)
-
-        
+    
     # Run grid IAdU algorithm
     R, selection_time = old_grid_iadu_algorithm(S, FL, W, psS, sS, k)
     
     # Compute final scores
-    score, sum_psS, sum_psR = HPFR(R, optimal_psS, optimal_sS, W, len(S))
-    
-    return R, score, sum_psS, sum_psR, prep_time, selection_time, len(FL)
+    score, sum_psS, sum_psR, sum_rF = HPFR(R, optimal_psS, optimal_sS, W, len(S))
 
-
+    return R, score, sum_psS, sum_psR, sum_rF, prep_time, selection_time, len(FL)

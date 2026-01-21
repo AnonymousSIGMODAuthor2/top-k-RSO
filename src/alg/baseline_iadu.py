@@ -94,9 +94,9 @@ def iadu(S: List[Place], k: int, W, exact_psS, exact_sS, prep_time) -> Tuple[Lis
     R, selection_time = baseline_iadu_algorithm(S, K, k, W, exact_psS, exact_sS)
     
     # Compute final scores
-    score, sum_psS, sum_psR = HPFR(R, exact_psS, exact_sS, W, len(S))
+    score, sum_psS, sum_psR, sum_rF = HPFR(R, exact_psS, exact_sS, W, len(S))
     
-    return R, score, sum_psS, sum_psR, prep_time, selection_time
+    return R, score, sum_psS, sum_psR, sum_rF, prep_time, selection_time
 
 # --- IAdU method ---
 def iadu_no_r(S: List[Place], k: int, W) -> Tuple[List[Place], Dict[int, float], Dict[int, float], float, float, float]:
@@ -108,9 +108,9 @@ def iadu_no_r(S: List[Place], k: int, W) -> Tuple[List[Place], Dict[int, float],
     R, selection_time = baseline_iadu_algorithm_no_r(S, K, k, W, exact_psS, exact_sS)
     
     # Compute final scores
-    score, sum_psS, sum_psR = HPFR_no_r(R, exact_psS, exact_sS, W, len(S))
+    score, sum_psS, sum_psR, sum_rF = HPFR_no_r(R, exact_psS, exact_sS, W, len(S))
     
-    return R, score, sum_psS, sum_psR, prep_time, selection_time
+    return R, score, sum_psS, sum_psR, sum_rF, prep_time, selection_time
 
 # import pickle
 

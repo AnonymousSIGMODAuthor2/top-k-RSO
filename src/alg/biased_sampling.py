@@ -11,7 +11,17 @@ def sampling(S: List[Place], k: int, W, psS, sS) -> Tuple[List[Place], Dict[int,
     R_sampling, pruning_time = select_random(S, k)
     
     # Compute final scores
-    score, sum_psS, sum_psR = HPFR_no_r(R_sampling, psS, sS, W, len(S))
+    score, sum_psS, sum_psR, sum_rF = HPFR_no_r(R_sampling, psS, sS, W, len(S))
+    
+    return R_sampling, score, sum_psS, sum_psR, sum_rF, 0.0, pruning_time
+
+def old_sampling(S: List[Place], k: int, W, psS, sS) -> Tuple[List[Place], Dict[int, float], float, float]:
+    
+    # Random selection
+    R_sampling, pruning_time = select_random(S, k)
+    
+    # Compute final scores
+    score, sum_psS, sum_psR, sum_rF = HPFR(R_sampling, psS, sS, W, len(S))
     
     return R_sampling, score, sum_psS, sum_psR, 0.0, pruning_time
 
@@ -21,7 +31,7 @@ def biased_sampling(S: List[Place], k: int, W, psS, sS) -> Tuple[List[Place], Di
     R_sampling, pruning_time = select_biased_random(S, k)
     
     # Compute final scores
-    score, sum_psS, sum_psR = HPFR(R_sampling, psS, sS, W, len(S))
+    score, sum_psS, sum_psR, sum_rF= HPFR(R_sampling, psS, sS, W, len(S))
     
     return R_sampling, score, sum_psS, sum_psR, 0.0, pruning_time
 

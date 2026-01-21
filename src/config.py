@@ -10,22 +10,21 @@ NUM_CELLS = [25]
 
 COMBO = [
     (1000, 20),
-    # (1000, 50),
+    (1000, 50),
+    (1000, 100),
     # (5000, 20),
     # (5000, 50),
     # (5000, 100)
 ]
 
-GAMMAS = [1, 0.9, 0.8, 0.75, 0.5]  # example values for g
+GAMMAS = [1, 0.65, 0.75]  # example values for g
 
 
 DATASET_NAMES = [
-    "s_curve",
-    "bubble",
-    "flower",
-    "disk",
-    "snake",
-]
+    "dbpedia_1994_FIFA_World_Cup_squads",
+    "dbpedia_1998_FIFA_World_Cup_squads",
+    "dbpedia_2002_FIFA_World_Cup_squads",
+    "dbpedia_2010_FIFA_World_Cup_squads",]
 
 '''
 
@@ -46,8 +45,8 @@ DATASET_NAMES = [
 '''
 
 SIMULATED_DATASETS = [
-    "bubble"
-]
+ "s_curve",
+    "bubble",]
 
 # Generate GRID_RANGE dynamically based on NUM_CELLS
 def get_grid_range_for_cells(num_cells: int, cell_size: float = 1.0) -> tuple:
