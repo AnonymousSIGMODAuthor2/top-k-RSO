@@ -4,7 +4,6 @@ from typing import Dict, Tuple
 from alg.HPF_eq import HPFR, HPFR_no_r
 from models import List, Place
 
-
 def sampling(S: List[Place], k: int, W, psS, sS) -> Tuple[List[Place], Dict[int, float], float, float]:
     
     # Random selection

@@ -17,8 +17,8 @@ class ExperimentLogger:
         # Standard metadata columns that should always appear first
         self.meta_columns = ["shape", "K", "k", "W", "g*K/k", "G", "lenCL"]
         
-        # The standard metrics we expect for every method
-        self.metric_suffixes = ["_hpfr", "_pss_sum", "_psr_sum"]
+        # The standard metrics we expect for every method (Added _rf_sum)
+        self.metric_suffixes = ["_hpfr", "_pss_sum", "_psr_sum", "_rf_sum"]
         self.time_suffixes = ["_prep_time", "_sel_time", "_x_time"]
 
     def log(self, row_dict):
@@ -76,10 +76,26 @@ class ExperimentLogger:
         # 1. Metadata (Fixed order)
         final_cols = [c for c in self.meta_columns if c in cols]
         
-        # 2. Baseline Metrics (Always second, based on configured baseline_name)
-        # Excludes time/speedup columns which go to the end
-        base_metrics = [c for c in cols if c.startswith(f"{self.baseline_name}_") and not any(t in c for t in ["time", "speedup"])]
-        final_cols.extend(sorted(base_metrics))
+        # 2. Baseline Metrics (Explicit Order, not alphabetical)
+        # We want: Score -> RF -> PSS -> PSR
+        base_priority = [
+            f"{self.baseline_name}_hpfr",
+            f"{self.baseline_name}_rf_sum",
+            f"{self.baseline_name}_pss_sum",
+            f"{self.baseline_name}_psr_sum"
+        ]
+        
+        # Find all baseline columns that are NOT time/speedup
+        base_cols = [c for c in cols if c.startswith(f"{self.baseline_name}_") and not any(t in c for t in ["time", "speedup"])]
+        
+        # Add priority columns first
+        for c in base_priority:
+            if c in base_cols:
+                final_cols.append(c)
+                
+        # Add any remaining baseline columns (e.g. if new metrics are added later)
+        remaining_base = [c for c in base_cols if c not in final_cols]
+        final_cols.extend(sorted(remaining_base))
         
         # 3. Identify Other Methods
         methods = set()
@@ -90,17 +106,22 @@ class ExperimentLogger:
         
         sorted_methods = sorted(list(methods))
         
-        # 4. Method Metrics (Score, Diff, PSS, PSR)
+        # 4. Method Metrics (Score, Diff, RF, PSS, PSR)
         for method in sorted_methods:
             standard_block = [
                 f"{method}_hpfr",
                 f"{method}_hpfr_diff%",
+                f"{method}_rf_sum",   # <--- Added rF column here
                 f"{method}_pss_sum",
                 f"{method}_psr_sum"
             ]
             for col in standard_block:
                 if col in cols:
                     final_cols.append(col)
+            
+            # Catch-all for other metrics of this method not in standard_block
+            other_method_cols = [c for c in cols if c.startswith(method) and c not in standard_block and not any(t in c for t in ["time", "speedup"])]
+            final_cols.extend(sorted(other_method_cols))
                     
         # 5. Times & Speedup (At the end)
         
@@ -120,7 +141,7 @@ class ExperimentLogger:
                 if col in cols:
                     final_cols.append(col)
                     
-        # 6. Catch-all for anything missed
+        # 6. Catch-all for anything missed (e.g., completely unrelated columns)
         existing_set = set(final_cols)
         remaining = [c for c in cols if c not in existing_set]
         final_cols.extend(remaining)
@@ -203,7 +224,8 @@ class ExperimentLogger:
                     elif "diff%" in header_val: fill_color = colors["diff"]
                     elif "speedup" in header_val: fill_color = colors["speedup"]
                     elif "time" in header_val: fill_color = colors["time"]
-                    elif any(x in header_val for x in ["hpfr", "pss", "psr"]): fill_color = colors["score"]
+                    # Added rf_sum to score coloring
+                    elif any(x in header_val for x in ["hpfr", "pss", "psr", "rf_sum"]): fill_color = colors["score"]
 
                     if fill_color:
                         fill_obj = PatternFill(start_color=fill_color, fill_type="solid")

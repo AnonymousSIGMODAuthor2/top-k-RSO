@@ -1,11 +1,11 @@
 from typing import Dict, List, Tuple
 from models import Place
-
+import config as cfg
 
 def HPF(pi: Place, pj: Place, W: float, psS, sS, k: int) -> float:
     K = W * k
     #
-    return (K - k) * (pi.rF - pj.rF) / (k - 1) + (psS[pi.id] + psS[pj.id]) / (k - 1) - 2*W * sS[(pi.id, pj.id)]
+    return (K - k) * (pi.rF - pj.rF) * cfg.b / (k - 1) + (psS[pi.id] + psS[pj.id]) / (k - 1) - 2*W * sS[(pi.id, pj.id)]
 
 #######################################################################################################################
 #######################################################################################################################
@@ -23,11 +23,11 @@ def HPFR(R: List[Place], baseline_psS: Dict[int, float], baseline_sS: Dict[Tuple
                 
     #
     score = 0
-    score = (K - k) * sum_rF * 1 + sum(baseline_psS[p.id] - W * psR[p.id] for p in R)
+    score = (K - k) * sum_rF * cfg.wrf + sum(baseline_psS[p.id] - W * psR[p.id] for p in R)
     # score = (K - k) * (sum(p.rF for p in R))/(2*k) + sum(baseline_psS[p.id] - W * psR[p.id] for p in R)/(2 * k * (K-W))
     # score = (K - k) * (sum(p.rF for p in R)) + sum(baseline_psS[p.id] - W * psR[p.id] for p in R)
     
-    return score, sum(baseline_psS[p.id] for p in R), sum(W*psR[p.id] for p in R), sum_rF
+    return score, sum(baseline_psS[p.id] for p in R), sum(W*psR[p.id] for p in R), sum_rF * cfg.wrf
 
 def HPFR_no_r(R: List[Place], baseline_psS: Dict[int, float], baseline_sS: Dict[Tuple[int, int], float], W: float, K):
     

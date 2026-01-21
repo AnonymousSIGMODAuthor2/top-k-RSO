@@ -93,25 +93,28 @@ class ExperimentRunner:
         try:
             res = func(**call_kwargs)
             
-            # Standard Unpacking (first 6 are guaranteed)
+            # Standard Unpacking (Updated for new return signature)
+            # Tuple: (R, score, sum_psS, sum_psR, sum_rF, prep_time, selection_time, [lenCL])
             R = res[0]
             score = res[1]
             sum_pss = res[2] 
             sum_psr = res[3]
-            prep_t = res[4]
-            sel_t = res[5]
+            sum_rf = res[4]     # New output
+            prep_t = res[5]     # Shifted from 4
+            sel_t = res[6]      # Shifted from 5
 
             if name == "base_iadu":
                 prep_t = context['base_prep_time']
 
-            # Extract lenCL if available (usually index 6)
-            if len(res) > 6:
-                row["lenCL"] = res[6]
+            # Extract lenCL if available (previously index 6, now 7)
+            if len(res) > 7:
+                row["lenCL"] = res[7]
 
             # Store metrics in the row dict
             row[f"{name}_hpfr"] = score
             row[f"{name}_pss_sum"] = sum_pss
             row[f"{name}_psr_sum"] = sum_psr
+            row[f"{name}_rf_sum"] = sum_rf  # Added logging for rf_sum
             row[f"{name}_prep_time"] = prep_t
             row[f"{name}_sel_time"] = sel_t
             row[f"{name}_x_time"] = prep_t + sel_t
@@ -127,6 +130,6 @@ class ExperimentRunner:
             # import traceback
             # traceback.print_exc() 
             # Fill with 0s on error to prevent CSV misalignment
-            for suffix in ["hpfr", "pss_sum", "psr_sum", "prep_time", "sel_time", "x_time"]:
+            for suffix in ["hpfr", "pss_sum", "psr_sum", "rf_sum", "prep_time", "sel_time", "x_time"]:
                 row[f"{name}_{suffix}"] = 0
             return None

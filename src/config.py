@@ -10,8 +10,8 @@ NUM_CELLS = [25]
 
 COMBO = [
     (1000, 20),
-    (1000, 50),
-    (1000, 100),
+    # (1000, 50),
+    # (1000, 100),
     # (5000, 20),
     # (5000, 50),
     # (5000, 100)
@@ -19,12 +19,14 @@ COMBO = [
 
 GAMMAS = [1, 0.65, 0.75]  # example values for g
 
+wrf = 0.2  # scaling factor for rF in baseline_iadu
 
 DATASET_NAMES = [
     "dbpedia_1994_FIFA_World_Cup_squads",
-    "dbpedia_1998_FIFA_World_Cup_squads",
-    "dbpedia_2002_FIFA_World_Cup_squads",
-    "dbpedia_2010_FIFA_World_Cup_squads",]
+    # "dbpedia_1998_FIFA_World_Cup_squads",
+    # "dbpedia_2002_FIFA_World_Cup_squads",
+    # "dbpedia_2010_FIFA_World_Cup_squads",
+]
 
 '''
 

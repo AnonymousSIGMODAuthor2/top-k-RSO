@@ -23,8 +23,8 @@ def baseline_iadu_algorithm(S: List[Place], K_full: int, k: int, W: float, psS, 
         if len(R) < k:
             for p in candidates:
                 if p.id != curMP.id:
-                    p.cHPF += (K - k) * (p.rF + curMP.rF) / (k - 1) +(psS[p.id] + psS[curMP.id]) / (k - 1) - 2 * W * spacial_proximity(sS, p, curMP)
-                    # 
+                    p.cHPF += (K - k) * (p.rF + curMP.rF) * cfg.wrf / (k - 1) + (psS[p.id] + psS[curMP.id]) / (k - 1) - 2 * W * spacial_proximity(sS, p, curMP)
+    
     select_end = time.time()
     
     select_end - select_start

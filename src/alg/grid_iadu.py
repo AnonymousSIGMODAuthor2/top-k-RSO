@@ -2,7 +2,7 @@ import time
 import numpy as np
 from typing import List, Tuple, Dict
 import matplotlib.pyplot as plt
-from alg.HPF_eq import HPF, HPFR, HPFR_div
+from alg.HPF_eq import HPF, HPFR
 from alg.baseline_iadu import base_precompute, baseline_iadu_algorithm
 from models import Place, Cell, SquareGrid, FullGrid
 import config as cfg
