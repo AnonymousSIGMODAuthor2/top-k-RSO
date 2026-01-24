@@ -77,7 +77,7 @@ def grid_sampling(S: List[Place], k: int, W: float, G: int, optimal_psS, optimal
 
     return R, score, sum_psS, sum_psR, sum_rF, prep_time, selection_time, len(CL), cell_stats
 
-def grid_sampling_with_rF(S: List[Place], k: int, W: float, G: int, optimal_psS, optimal_sS):
+def stratified_sampling(S: List[Place], k: int, W: float, G: int, optimal_psS, optimal_sS):
 
     t_prep_start = time.time()
     grid = SquareGrid(S, G)

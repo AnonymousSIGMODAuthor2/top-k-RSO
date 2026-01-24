@@ -27,7 +27,7 @@ def HPFR(R: List[Place], baseline_psS: Dict[int, float], baseline_sS: Dict[Tuple
     # score = (K - k) * (sum(p.rF for p in R))/(2*k) + sum(baseline_psS[p.id] - W * psR[p.id] for p in R)/(2 * k * (K-W))
     # score = (K - k) * (sum(p.rF for p in R)) + sum(baseline_psS[p.id] - W * psR[p.id] for p in R)
     
-    return score, sum(baseline_psS[p.id] for p in R), sum(W*psR[p.id] for p in R), sum_rF * cfg.wrf
+    return score, sum(baseline_psS[p.id] for p in R), sum(W*psR[p.id] for p in R), (K-k) * sum_rF * cfg.wrf
 
 def HPFR_no_r(R: List[Place], baseline_psS: Dict[int, float], baseline_sS: Dict[Tuple[int, int], float], W: float, K):
     

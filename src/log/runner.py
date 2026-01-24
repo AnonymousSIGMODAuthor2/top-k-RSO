@@ -4,6 +4,7 @@ from typing import Dict, List, Any, Callable
 
 # Import the optimization target for precomputation
 from alg.baseline_iadu import base_precompute
+import config as cfg
 
 class ExperimentRunner:
     def __init__(self, load_dataset_func, logger, plot_callback=None):
@@ -45,6 +46,7 @@ class ExperimentRunner:
                     for G in G_values:
                         row = {
                             "shape": shape, "K": K, "k": k, "W": W,
+                            "wrf": cfg.wrf,
                             "g*K/k": f"{g}*K/k", "G": G, "lenCL": 0 
                         }
 
@@ -71,6 +73,7 @@ class ExperimentRunner:
         # 1. Base Arguments available to all functions
         available_args = {
             'S': S, 'k': k, 'W': W, 'G': G,
+            "wrf": cfg.wrf,
             'exact_psS': context['exact_psS'],     
             'exact_sS': context['exact_sS'],       
             'prep_time': context['base_prep_time'],

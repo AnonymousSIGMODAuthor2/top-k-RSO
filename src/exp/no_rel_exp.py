@@ -16,7 +16,7 @@ from alg.extension_sampling import grid_sampling
 def run():
     plotter = ExperimentPlotter("no_r_plots.pdf")
     
-    logger = ExperimentLogger("no_r_exp_results", baseline_name="base_iadu_no_r")
+    logger = ExperimentLogger("no_rf_res", baseline_name="base_iadu_no_r")
     
     runner = ExperimentRunner(load_dataset, logger, plot_callback=plotter.plot_results)
 
