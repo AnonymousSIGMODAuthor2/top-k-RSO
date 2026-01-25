@@ -6,56 +6,31 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import config as cfg
 from log.logger import ExperimentLogger
 from log.runner import ExperimentRunner
-from log.plotter import DynamicPlotter
+from log.plotter import ExperimentPlotter
 # --- ALGORITHM IMPORTS ---
 from alg.baseline_iadu import iadu, load_dataset
 from alg.grid_iadu import grid_iadu
 from alg.biased_sampling import biased_sampling, old_sampling
 from alg.extension_sampling import grid_weighted_sampling, stratified_grid_sampling, stratified_sampling
 
-def plot_bridge(S, shape, K, k, G, algo_results):
-    if not algo_results:
-        return
-
-    # A. Create a NEW plotter instance for this specific dataset (S)
-    plot_title = f"Dataset: {shape} | K={K}, k={k} | G={G}"
-    dp = DynamicPlotter(S, title=plot_title)
-
-    # B. Register the results
-    for algo_name, res in algo_results.items():
-        # Formatting: "grid_weighted" -> "Grid Weighted"
-        clean_name = algo_name.replace("_", " ").title()
-        
-        # Logic: Only draw grid lines for grid-based methods
-        use_grid = G if "grid" in algo_name.lower() else None
-        
-        dp.register(
-            method_name=clean_name,
-            R=res.get('R', []),
-            score=res.get('score', 0),
-            G=use_grid
-        )
-
-    # C. Save the file (creates a unique PDF for this combo)
-    os.makedirs("plots", exist_ok=True)
-    filename = f"plots/{shape}_K{K}_k{k}_G{G}.pdf"
-    dp.plot(filename)
-
 def run():
-    # Setup Logger
-    logger = ExperimentLogger("results", baseline_name="base_iadu")
-    
-    # Setup Runner: Pass our 'plot_bridge' function here
-    runner = ExperimentRunner(load_dataset, logger, plot_callback=plot_bridge)
+    # 1. Initialize Logger and Plotter
+    # The plotter is now initialized once and will accumulate pages into the PDF
+    logger = ExperimentLogger("resultswrf", baseline_name="base_iadu")
+    plotter = ExperimentPlotter("plots.pdf")
+
+    # 2. Initialize Runner with the Plotter's callback
+    # The updated ExperimentRunner passes (S, shape, K, k, G, W, wrf, algo_results)
+    # The updated ExperimentPlotter.plot_results accepts exactly these arguments.
+    runner = ExperimentRunner(load_dataset, logger, plot_callback=plotter.plot_results)
 
     print("Registering algorithms...")
     runner.register("base_iadu", iadu)
     runner.register("stratified_sampling", stratified_sampling)
+    runner.register("sampling", old_sampling)
     runner.register("biased_sampling", biased_sampling)
 
     print(f"=== Starting Experiment ===")
-    print(f"Datasets: {cfg.DATASET_NAMES}")
-    
     try:
         runner.run_all(
             datasets=cfg.DATASET_NAMES, 
@@ -64,12 +39,14 @@ def run():
             G_values=cfg.NUM_CELLS
         )
     except KeyboardInterrupt:
-        print("\nExperiment interrupted.")
+        print("\nExperiment interrupted by user.")
     except Exception as e:
-        print(f"\nError: {e}")
+        print(f"Experiment failed: {e}")
         import traceback
         traceback.print_exc()
     finally:
+        # 3. Clean up and Save
+        plotter.close()
         logger.save()
 
 if __name__ == "__main__":

@@ -63,7 +63,8 @@ class ExperimentRunner:
                         self.logger.log(row)
 
                         if self.plot_callback:
-                            self.plot_callback(S, shape, K, k, G, current_algo_results)
+                            # Updated to pass W and cfg.wrf to the plotter
+                            self.plot_callback(S, shape, K, k, G, W, cfg.wrf, current_algo_results)
         
         self.logger.save()
 

@@ -191,6 +191,30 @@ class ExperimentLogger:
             }
             
             for ws in wb.worksheets:
+                # --- NEW LOGIC START: Insert empty row when K changes ---
+                k_col_idx = None
+                # Find the column index for "K"
+                for i, cell in enumerate(ws[1], start=1):
+                    if cell.value == "K":
+                        k_col_idx = i
+                        break
+                
+                if k_col_idx:
+                    # Start checking from row 3 (comparing to row 2)
+                    row = 3
+                    while row <= ws.max_row:
+                        curr_val = ws.cell(row=row, column=k_col_idx).value
+                        prev_val = ws.cell(row=row-1, column=k_col_idx).value
+                        
+                        # If K changed, insert a row
+                        if curr_val is not None and prev_val is not None and curr_val != prev_val:
+                            ws.insert_rows(row)
+                            # Increment by 2: one for the new empty row, one to move to the next data row
+                            row += 2 
+                        else:
+                            row += 1
+                # --- NEW LOGIC END ---
+
                 # Headers
                 header_fill = PatternFill(start_color=colors["header"], fill_type="solid")
                 header_font = Font(bold=True, color="FFFFFF", size=11)
@@ -223,6 +247,10 @@ class ExperimentLogger:
                         fill_obj = PatternFill(start_color=fill_color, fill_type="solid")
                         border = Border(left=Side(style='thin', color="BFBFBF"), right=Side(style='thin', color="BFBFBF"))
                         for cell in col_cells[1:]:
+                            # Skip styling if it's the empty separator row we just added
+                            if cell.value is None: 
+                                continue
+
                             cell.fill = fill_obj
                             cell.border = border
                             
