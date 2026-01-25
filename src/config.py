@@ -5,23 +5,23 @@ import math
 #NUM_CELLS = [64, 100, 256, 529, 1024]  # Different grid sizes for experiments
 
 #default G = 256
-NUM_CELLS = [8, 16, 256]
+NUM_CELLS = [16]
 
 
 COMBO = [
     # (100, 20),
-    (200, 20),
-    (500, 20),
+    # (200, 20),
+    # (500, 20),
     # (1000, 10),
     (1000, 20),
     # (1000, 50),
     # (1000, 100),
-    (5000, 20),
+    # (5000, 20),
     # (5000, 50),
     # (5000, 100)
 ]
 
-GAMMAS = [1, 0.65, 0.75]  # example values for g
+GAMMAS = [1, 0.5]  # example values for g
 
 wrf = 0.20  # scaling factor for rF in baseline_iadu
 

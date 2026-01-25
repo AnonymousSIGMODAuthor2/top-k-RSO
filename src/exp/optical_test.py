@@ -1,32 +1,42 @@
 import sys
 import os
-# Ensure parent directory is in path to import modules
+
+# --- 1. Import your new class ---
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-import config as cfg
 from log.logger import ExperimentLogger
 from log.runner import ExperimentRunner
-from log.plotter import DynamicPlotter
-# --- ALGORITHM IMPORTS ---
-from alg.baseline_iadu import iadu, load_dataset
-from alg.grid_iadu import grid_iadu
-from alg.biased_sampling import biased_sampling, old_sampling
-from alg.extension_sampling import grid_weighted_sampling, stratified_grid_sampling, stratified_sampling
+from log.plotter import DynamicPlotter  
 
-def plot_bridge(S, shape, K, k, G, algo_results):
+
+# --- ALGORITHMS ---
+from alg.baseline_iadu import iadu, iadu_no_r, load_dataset
+from alg.biased_sampling import biased_sampling
+from alg.extension_sampling import grid_weighted_sampling, stratified_sampling
+import config as cfg
+
+# --- UPDATED BRIDGE FUNCTION ---
+def plot_bridge(S, shape, K, k, G, algo_results, context=None):
+    """
+    Args:
+        context (dict): Contains 'W', 'g', etc. passed from Runner.
+    """
     if not algo_results:
         return
 
-    # A. Create a NEW plotter instance for this specific dataset (S)
-    plot_title = f"Dataset: {shape} | K={K}, k={k} | G={G}"
+    # 1. Extract W and g for the title and filename
+    W = context.get('W', 0) if context else 0
+    g = context.get('g', 0) if context else 0
+    
+    # 2. Setup Plotter
+    plot_title = f"{shape} | K={K}, k={k}, G={G} | W={W:.2f} (g={g})"
     dp = DynamicPlotter(S, title=plot_title)
 
-    # B. Register the results
+    # 3. Register Algorithms
     for algo_name, res in algo_results.items():
-        # Formatting: "grid_weighted" -> "Grid Weighted"
         clean_name = algo_name.replace("_", " ").title()
         
-        # Logic: Only draw grid lines for grid-based methods
+        # Only draw grid lines for grid-based methods
         use_grid = G if "grid" in algo_name.lower() else None
         
         dp.register(
@@ -36,26 +46,27 @@ def plot_bridge(S, shape, K, k, G, algo_results):
             G=use_grid
         )
 
-    # C. Save the file (creates a unique PDF for this combo)
+    # 4. Save with Detailed Filename
+    # Filename format: shape_K_k_G_W_g.pdf
     os.makedirs("plots", exist_ok=True)
-    filename = f"plots/{shape}_K{K}_k{k}_G{G}.pdf"
+    filename = f"plots/{shape}_K{K}_k{k}_G{G}_W{W:.2f}_g{g}.pdf"
+    
     dp.plot(filename)
 
+# --- MAIN ---
 def run():
-    # Setup Logger
-    logger = ExperimentLogger("results", baseline_name="base_iadu")
+    logger = ExperimentLogger("optical_test_results", baseline_name="base_iadu")
     
-    # Setup Runner: Pass our 'plot_bridge' function here
+    # Pass the updated bridge
     runner = ExperimentRunner(load_dataset, logger, plot_callback=plot_bridge)
 
     print("Registering algorithms...")
     runner.register("base_iadu", iadu)
     runner.register("stratified_sampling", stratified_sampling)
     runner.register("biased_sampling", biased_sampling)
+    runner.register("grid_weighted", grid_weighted_sampling)
 
     print(f"=== Starting Experiment ===")
-    print(f"Datasets: {cfg.DATASET_NAMES}")
-    
     try:
         runner.run_all(
             datasets=cfg.DATASET_NAMES, 
