@@ -14,7 +14,7 @@ class ExperimentLogger:
         self.baseline_name = baseline_name
         self.logs = []
         
-        # Metadata columns (ADDED "wrf" HERE)
+        # Metadata columns (Includes "wrf" as requested)
         self.meta_columns = ["shape", "K", "k", "W", "wrf", "g*K/k", "G", "lenCL"]
         
         # Standard metrics suffixes
@@ -128,7 +128,7 @@ class ExperimentLogger:
         df_detailed = self._calculate_derived_metrics(df_detailed)
         
         # 2. Create Summary (Average Sheet)
-        # Group by settings (ADDED "wrf" HERE)
+        # Group by settings (including wrf)
         group_keys = [k for k in ["K", "k", "W", "wrf", "g*K/k", "G"] if k in df_detailed.columns]
         
         if group_keys:
@@ -191,26 +191,35 @@ class ExperimentLogger:
             }
             
             for ws in wb.worksheets:
-                # --- NEW LOGIC START: Insert empty row when K changes ---
-                k_col_idx = None
-                # Find the column index for "K"
+                # --- NEW LOGIC START: Insert empty row when K OR k changes ---
+                K_idx = None
+                k_idx = None
+                
+                # Find column indices for "K" and "k"
                 for i, cell in enumerate(ws[1], start=1):
                     if cell.value == "K":
-                        k_col_idx = i
-                        break
+                        K_idx = i
+                    elif cell.value == "k":
+                        k_idx = i
                 
-                if k_col_idx:
+                if K_idx and k_idx:
                     # Start checking from row 3 (comparing to row 2)
                     row = 3
                     while row <= ws.max_row:
-                        curr_val = ws.cell(row=row, column=k_col_idx).value
-                        prev_val = ws.cell(row=row-1, column=k_col_idx).value
+                        curr_K = ws.cell(row=row, column=K_idx).value
+                        curr_k = ws.cell(row=row, column=k_idx).value
                         
-                        # If K changed, insert a row
-                        if curr_val is not None and prev_val is not None and curr_val != prev_val:
-                            ws.insert_rows(row)
-                            # Increment by 2: one for the new empty row, one to move to the next data row
-                            row += 2 
+                        prev_K = ws.cell(row=row-1, column=K_idx).value
+                        prev_k = ws.cell(row=row-1, column=k_idx).value
+                        
+                        # Only proceed if we have valid data (prev row isn't an empty separator)
+                        if prev_K is not None and curr_K is not None:
+                            # If the combination (K, k) changed, insert a row
+                            if (curr_K != prev_K) or (curr_k != prev_k):
+                                ws.insert_rows(row)
+                                row += 2 # Skip the new empty row and the current data row
+                            else:
+                                row += 1
                         else:
                             row += 1
                 # --- NEW LOGIC END ---

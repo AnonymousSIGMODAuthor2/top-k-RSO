@@ -16,7 +16,7 @@ from alg.extension_sampling import grid_weighted_sampling, stratified_grid_sampl
 def run():
     # 1. Initialize Logger and Plotter
     # The plotter is now initialized once and will accumulate pages into the PDF
-    logger = ExperimentLogger("resultswrf", baseline_name="base_iadu")
+    logger = ExperimentLogger("results", baseline_name="base_iadu")
     plotter = ExperimentPlotter("plots.pdf")
 
     # 2. Initialize Runner with the Plotter's callback

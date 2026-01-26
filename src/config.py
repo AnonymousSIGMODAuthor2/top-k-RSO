@@ -12,18 +12,19 @@ COMBO = [
     # (100, 20),
     (200, 20),
     (500, 20),
+    (500, 15),
     # (1000, 10),
-    (1000, 20),
+    # (1000, 20),
     # (1000, 50),
     # (1000, 100),
-    (5000, 20),
+    # (5000, 20),
     # (5000, 50),
     # (5000, 100)
 ]
 
 GAMMAS = [1, 0.5, 0.65, 0.75]  # example values for g
 
-wrf = 1.0  # scaling factor for rF in baseline_iadu
+wrf = 0.2  # scaling factor for rF in baseline_iadu
 
 DATASET_NAMES = [
     "dbpedia_1994_FIFA_World_Cup_squads",
